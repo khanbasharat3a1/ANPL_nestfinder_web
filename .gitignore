@@ -1,0 +1,34 @@
+# Environments
+.env
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Firebase Secrets & Service Accounts
+*service-account*.json
+*service_account*.json
+firebase-credentials.json
+google-services.json
+
+# IDEs & System files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Build & Deploy
+dist/
+build/
+*.egg-info/

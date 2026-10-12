@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}You are Offline — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="error-hero">
+  <div style="width: 72px; height: 72px; margin: 0 auto 1.5rem; background-color: var(--primary-light); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+    <svg style="width: 40px; height: 40px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 4.243a9 9 0 01-12.728 0m0 0l2.829-2.829m-2.829 2.829L3 21m5.657-12.536a5 5 0 017.072 0m-7.072 0l2.829 2.829"/></svg>
+  </div>
+  <h1 class="error-title">No Internet Connection</h1>
+  <p class="error-desc">
+    It looks like you're currently offline. Please check your network connection in Billawar and reload the page.
+  </p>
+  <button type="button" onclick="window.location.reload()" class="btn btn-primary">
+    Retry Connection
+  </button>
+</div>
+{% endblock %}

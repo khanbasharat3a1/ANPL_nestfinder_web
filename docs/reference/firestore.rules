@@ -1,0 +1,212 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------
+    // Helper Functions
+    // -------------------------------------------------------------
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function userDocExists() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isNotBanned() {
+      return isAuthenticated() && (!userDocExists() || getUserData().isBanned != true);
+    }
+
+    function getUserRole() {
+      return userDocExists() ? getUserData().role : 'user';
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && isNotBanned() && getUserRole() == 'super_admin';
+    }
+
+    function isApprover() {
+      return isAuthenticated() && isNotBanned() && (getUserRole() == 'approver' || getUserRole() == 'super_admin');
+    }
+
+    // -------------------------------------------------------------
+    // Users Collection
+    // -------------------------------------------------------------
+    match /users/{userId} {
+      // Authenticated users can read user profiles (needed for owner info and role verification)
+      allow read: if isAuthenticated();
+
+      // New users can create their own document on sign up with role 'user' and isBanned == false
+      allow create: if isOwner(userId)
+                    && request.resource.data.role == 'user'
+                    && request.resource.data.isBanned == false;
+
+      // Users can update their own personal info (name, nameLower, emailLower, phone, photoUrl, fcmToken)
+      // but CANNOT change role or isBanned status.
+      // Super admin can change role and isBanned on other users (cannot self-modify role or ban).
+      // Super admin can also backfill search fields (nameLower, emailLower).
+      allow update: if (isOwner(userId)
+                        && isNotBanned()
+                        && request.resource.data.role == resource.data.role
+                        && request.resource.data.isBanned == resource.data.isBanned)
+                    || (isSuperAdmin() && (
+                        // Role or ban modification on other users
+                        (request.auth.uid != userId
+                         && request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isBanned'])
+                         && request.resource.data.role in ['user', 'approver', 'super_admin']
+                         && request.resource.data.isBanned is bool)
+                        // Search fields backfill or profile maintenance
+                        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nameLower', 'emailLower'])
+                        // Owner personal info updates when super_admin is the owner
+                        || (isOwner(userId) && request.resource.data.role == resource.data.role && request.resource.data.isBanned == resource.data.isBanned)
+                    ));
+
+      // Only super_admin can delete a user document
+      allow delete: if isSuperAdmin();
+
+      // User favorites subcollection
+      match /favorites/{listingId} {
+        allow read, write: if isOwner(userId) && isNotBanned();
+      }
+
+      // User notifications subcollection
+      match /notifications/{notificationId} {
+        // Owner can read their own notifications
+        allow read: if isOwner(userId) && isNotBanned();
+
+        // Approver or super_admin can create notification with type 'approved' or 'rejected'
+        // Approvers cannot create a notification for their own listing review
+        allow create: if isApprover()
+                      && (isSuperAdmin() || request.auth.uid != userId)
+                      && request.resource.data.type in ['approved', 'rejected']
+                      && request.resource.data.listingId is string
+                      && request.resource.data.read == false;
+
+        // Owner can update ONLY the 'read' field
+        allow update: if isOwner(userId) && isNotBanned()
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+
+        // Owner or super admin can delete notification
+        allow delete: if (isOwner(userId) && isNotBanned()) || isSuperAdmin();
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Listings Collection
+    // -------------------------------------------------------------
+    match /listings/{listingId} {
+      // Read rules:
+      // - Approvers & super_admins can read all listings
+      // - Normal non-banned users can read approved listings OR their own listings
+      allow read: if isAuthenticated() && (
+        isApprover() ||
+        (isNotBanned() && (resource.data.status == 'approved' || resource.data.ownerId == request.auth.uid))
+      );
+
+      // Create rules:
+      // - Must be owner of the listing
+      // - Must not be banned
+      // - Approvers (TL) and Super Admins can create auto-approved listings (with reviewedBy == uid and reviewedAt)
+      // - Normal users can only create 'pending' listings
+      // - Locality string up to 60 characters
+      allow create: if isAuthenticated() && isNotBanned()
+                    && request.resource.data.ownerId == request.auth.uid
+                    && (
+                      (isApprover() && (
+                        (request.resource.data.status == 'approved' && request.resource.data.reviewedBy == request.auth.uid && request.resource.data.reviewedAt != null)
+                        || request.resource.data.status == 'pending'
+                      ))
+                      || (!isApprover() && request.resource.data.status == 'pending')
+                    )
+                    && request.resource.data.locality is string
+                    && request.resource.data.locality.size() > 0
+                    && request.resource.data.locality.size() <= 60
+                    && (request.resource.data.localityIsCustom == null || request.resource.data.localityIsCustom is bool)
+                    && (request.resource.data.isArchived == null || request.resource.data.isArchived is bool);
+
+      // Update rules:
+      // 1. Super Admin can update anything on any listing.
+      // 2. Approvers can approve/reject with review metadata and optional minor edits:
+      //    (title, description, amenities, distanceFromOfficeKm, locality, localityIsCustom, updatedAt,
+      //     status, rejectionReason, reviewedBy, reviewedByName, reviewedByRole, reviewedAt).
+      //    Approver CANNOT review their own listing, and cannot edit photos, rent, deposit or owner details.
+      // 3. Owners can update their own pending/rejected listings (or reset approved to pending).
+      allow update: if isAuthenticated() && isNotBanned() && (
+        // Super admin full edit
+        isSuperAdmin() ||
+
+        // Approver review action: cannot review own listing, only allowed to touch review fields and minor edits
+        (isApprover() && (
+          resource.data.ownerId != request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              'status', 'rejectionReason', 'reviewedBy', 'reviewedByName', 'reviewedByRole', 'reviewedAt',
+              'title', 'description', 'amenities', 'distanceFromOfficeKm',
+              'locality', 'localityIsCustom', 'updatedAt'
+            ]) &&
+          (request.resource.data.locality == null || (request.resource.data.locality is string && request.resource.data.locality.size() <= 60))
+        )) ||
+
+        // Owner updating their listing:
+        // - If listing was pending or rejected: owner can update fields without setting status to 'approved'
+        // - If listing was approved: modifying key details automatically resets status to 'pending'
+        (isOwner(resource.data.ownerId) && (
+          request.resource.data.locality is string &&
+          request.resource.data.locality.size() > 0 &&
+          request.resource.data.locality.size() <= 60 &&
+          (request.resource.data.localityIsCustom == null || request.resource.data.localityIsCustom is bool) &&
+          (request.resource.data.isArchived == null || request.resource.data.isArchived is bool) &&
+          ((resource.data.status in ['pending', 'rejected'] && request.resource.data.status in ['pending', 'rejected', 'archived']) ||
+          (resource.data.status == 'approved' && request.resource.data.status == 'pending'))
+        ))
+      );
+
+      // Delete rules:
+      // Only super_admin can permanently delete a listing (owners can archive via update)
+      allow delete: if isSuperAdmin();
+    }
+
+    // -------------------------------------------------------------
+    // Reports Collection
+    // -------------------------------------------------------------
+    match /reports/{reportId} {
+      // Users can submit reports with deterministic ID: listingId_reporterUid
+      allow create: if isAuthenticated() && isNotBanned()
+                    && request.resource.data.reportedBy == request.auth.uid
+                    && request.resource.data.listingId is string
+                    && reportId == request.resource.data.listingId + '_' + request.auth.uid;
+
+      // Only super admins can read, resolve, and delete reports
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    // -------------------------------------------------------------
+    // Audit Logs Collection (adminLogs)
+    // -------------------------------------------------------------
+    match /adminLogs/{logId} {
+      // Only super_admin can create or read audit logs. Logs are immutable once written.
+      allow read, create: if isSuperAdmin() && request.resource.data.actorUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // -------------------------------------------------------------
+    // App Configuration Document (config/app)
+    // -------------------------------------------------------------
+    match /config/app {
+      // Any authenticated user can read app config (amenities, property types, localities)
+      allow read: if isAuthenticated();
+
+      // Only super_admin can edit the app config
+      allow write: if isSuperAdmin();
+    }
+  }
+}

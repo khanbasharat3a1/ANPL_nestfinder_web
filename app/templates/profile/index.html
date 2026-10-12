@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+  <div style="margin-bottom: 1.5rem;">
+    <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem;">My Profile</h1>
+    <p style="color: var(--text-secondary); font-size: 0.9375rem;">Account information and settings</p>
+  </div>
+
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+      <div style="width: 56px; height: 56px; border-radius: 50%; background-color: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700;">
+        {{ current_user.name[:1] if current_user.name else 'U' }}
+      </div>
+      <div>
+        <div style="font-size: 1.25rem; font-weight: 600;">{{ current_user.name }}</div>
+        <div style="color: var(--text-secondary); font-size: 0.875rem;">{{ current_user.email }}</div>
+        <div style="margin-top: 0.25rem;">
+          <span class="badge badge-role">{{ current_user.role }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid var(--border); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.9375rem;">
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-secondary);">Phone</span>
+        <span>{{ current_user.phone or "Not provided" }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span style="color: var(--text-secondary);">Status</span>
+        <span style="color: var(--status-approved); font-weight: 500;">Active</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem;">Session</h2>
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-block" style="color: var(--status-rejected);">
+      Sign Out
+    </a>
+  </div>
+</div>
+{% endblock %}

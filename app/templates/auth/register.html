@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Account — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1 class="auth-title">Create Account</h1>
+      <p class="auth-subtitle">Join the Atomic North accommodation hub</p>
+    </div>
+
+    <!-- Registration Form -->
+    <form id="register-form" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label for="reg-name" class="form-label">Full Name</label>
+        <input type="text" id="reg-name" class="form-control" placeholder="Aman Sharma" required autocomplete="name">
+      </div>
+
+      <div class="form-group">
+        <label for="reg-email" class="form-label">Email address</label>
+        <input type="email" id="reg-email" class="form-control" placeholder="aman@atomicnorth.com" required autocomplete="email">
+      </div>
+
+      <div class="form-group">
+        <label for="reg-phone" class="form-label">Phone Number (Optional)</label>
+        <input type="tel" id="reg-phone" class="form-control" placeholder="9876543210" pattern="[6-9][0-9]{9}" title="10-digit Indian phone number">
+        <div class="form-helper">10-digit Indian mobile number (without +91)</div>
+      </div>
+
+      <div class="form-group">
+        <label for="reg-password" class="form-label">Password</label>
+        <input type="password" id="reg-password" class="form-control" placeholder="At least 6 characters" minlength="6" required autocomplete="new-password">
+      </div>
+
+      <button type="submit" id="btn-submit-register" class="btn btn-primary btn-block">
+        Create Account
+      </button>
+    </form>
+
+    <div style="text-align:center;margin-top:1.5rem;font-size:0.875rem;color:var(--text-secondary);">
+      Already have an account? <a href="{{ url_for('auth.login') }}" style="font-weight:600;">Sign In</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function handleRegister(event) {
+    event.preventDefault();
+    const name = document.getElementById('reg-name').value;
+    const email = document.getElementById('reg-email').value;
+    const phone = document.getElementById('reg-phone').value;
+    const password = document.getElementById('reg-password').value;
+    const btn = document.getElementById('btn-submit-register');
+
+    btn.disabled = true;
+    btn.textContent = 'Creating account...';
+
+    if (window.NestFinderAuth?.registerWithEmail) {
+      window.NestFinderAuth.registerWithEmail(name, email, password, phone)
+        .finally(() => {
+          btn.disabled = false;
+          btn.textContent = 'Create Account';
+        });
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Create Account';
+      window.NestFinder.showToast('Authentication module loading, please retry...', 'info');
+    }
+  }
+</script>
+{% endblock %}

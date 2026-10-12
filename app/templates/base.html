@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="theme-color" content="#0F766E">
+  <meta name="description" content="Verified accommodation directory for Atomic North Pvt Ltd employees in Billawar, Jammu & Kashmir.">
+
+  <title>{% block title %}{{ app_name }}{% endblock %} — Verified Accommodation</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <!-- Global Top Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="{{ url_for('listings.explore') }}" class="brand-link" id="brand-logo">
+        <svg class="brand-icon" viewBox="0 0 24 24"><path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/></svg>
+        <span>{{ app_name }}</span>
+      </a>
+
+      <!-- Desktop Nav -->
+      {% include 'partials/nav.html' %}
+
+      <!-- Header Actions (Theme Toggle & User Session) -->
+      <div class="header-actions">
+        <!-- Theme Toggle Button -->
+        <button type="button" id="theme-toggle-btn" class="btn btn-secondary btn-icon" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+          <svg style="width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+        </button>
+
+        {% if current_user %}
+          <span class="badge badge-role" title="User Tier: {{ current_user.role }}">
+            {{ current_user.role }}
+          </span>
+          <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm" style="display:none;" id="desktop-sign-out">
+            Sign Out
+          </a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="btn btn-primary" id="header-signin-btn">
+            Sign In
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- Flash Messages Toast Area -->
+  <div class="main-content" style="padding-bottom: 0;">
+    {% include 'partials/messages.html' %}
+  </div>
+
+  <!-- Primary Page Body -->
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Client-side Firebase Config Bridge -->
+  <script>
+    window.FIREBASE_CONFIG = {{ firebase_config | tojson }};
+  </script>
+
+  <!-- Core UI Controller -->
+  <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+
+  <!-- Modular Firebase Auth Controller -->
+  <script type="module" src="{{ url_for('static', filename='js/firebase-auth.js') }}"></script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

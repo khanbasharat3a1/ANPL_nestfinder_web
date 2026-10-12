@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Something Went Wrong — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="error-hero">
+  <div class="error-code">500</div>
+  <h1 class="error-title">Unexpected Server Error</h1>
+  <p class="error-desc">
+    {{ error_message or "An unexpected issue occurred while processing your request. Our team has been notified." }}
+  </p>
+  <a href="{{ url_for('listings.explore') }}" class="btn btn-primary">
+    Return to Home
+  </a>
+</div>
+{% endblock %}

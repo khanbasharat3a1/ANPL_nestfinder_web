@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Suspended — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper" style="max-width: 520px;">
+  <div class="auth-card" style="text-align: center;">
+    <div style="width: 64px; height: 64px; margin: 0 auto 1.5rem; background-color: var(--status-rejected-bg); color: var(--status-rejected); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+      <svg style="width: 36px; height: 36px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+    </div>
+
+    <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--status-rejected);">
+      Account Suspended
+    </h1>
+
+    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9375rem; line-height: 1.6;">
+      Your NestFinder account has been suspended by an administrator in accordance with company accommodation guidelines.
+    </p>
+
+    <div style="background-color: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem; text-align: left; font-size: 0.875rem;">
+      <div style="font-weight: 600; margin-bottom: 0.25rem;">Need assistance?</div>
+      <div style="color: var(--text-secondary);">
+        Please reach out to the Atomic North administration team at:
+        <a href="mailto:{{ support_email }}" style="font-weight: 600; display: block; margin-top: 0.25rem;">
+          {{ support_email }}
+        </a>
+      </div>
+    </div>
+
+    <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-block">
+      Sign Out
+    </a>
+  </div>
+</div>
+{% endblock %}

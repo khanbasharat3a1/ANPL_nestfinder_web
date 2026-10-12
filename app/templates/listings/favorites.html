@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Saved Accommodations — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto; padding-bottom: 3rem;">
+  <div style="margin-bottom: 1.5rem;">
+    <h1 style="font-size: 1.75rem; font-weight: 700;">Saved Accommodations</h1>
+    <p style="color: var(--text-secondary); font-size: 0.9375rem;">Your bookmarked apartments, rooms, and PGs in Billawar</p>
+  </div>
+
+  {% if listings %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+      {% for item in listings %}
+        <div class="card" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
+          <div style="position: relative; aspect-ratio: 16/10; background: var(--border);">
+            <a href="{{ url_for('listings.detail', listing_id=item.id) }}">
+              <img src="{{ item.cardPhoto or item.coverPhoto }}" alt="{{ item.title }}" style="width: 100%; height: 100%; object-fit: cover;" loading="lazy">
+            </a>
+            <span class="badge badge-approved" style="position: absolute; top: 10px; left: 10px;">
+              Verified
+            </span>
+          </div>
+
+          <div style="padding: 1rem; flex: 1; display: flex; flex-direction: column;">
+            <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-bottom: 0.25rem;">
+              {{ item.rentPerMonth|format_inr }}<span style="font-size: 0.8125rem; font-weight: 400; color: var(--text-secondary);">/mo</span>
+            </div>
+
+            <h2 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.35rem;">
+              <a href="{{ url_for('listings.detail', listing_id=item.id) }}" style="color: var(--text-primary);">
+                {{ item.title }}
+              </a>
+            </h2>
+
+            <div style="font-size: 0.8125rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+              {{ item.locality }}
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; margin-top: auto;">
+              <a href="{{ url_for('listings.detail', listing_id=item.id) }}" class="btn btn-secondary btn-sm btn-block">
+                View Details
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 4rem 1.5rem;">
+      <div style="width: 64px; height: 64px; margin: 0 auto 1rem; background-color: var(--primary-light); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <svg style="width: 32px; height: 32px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+      </div>
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">No saved accommodations yet</h2>
+      <p style="color: var(--text-secondary); max-width: 440px; margin: 0 auto 1.5rem; font-size: 0.9375rem;">
+        Click the heart icon on any accommodation card in Explore to save properties for quick access later.
+      </p>
+      <a href="{{ url_for('listings.explore') }}" class="btn btn-primary">
+        Browse Explore Feed
+      </a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

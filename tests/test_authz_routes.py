@@ -68,14 +68,77 @@ def test_protected_routes_unauthenticated_redirect(client):
     assert resp.status_code == 302
     assert "/auth/login" in resp.headers["Location"]
 
+    # Add listing wizard requires authentication
+    resp = client.get("/listings/new")
+    assert resp.status_code == 302
+    assert "/auth/login" in resp.headers["Location"]
+
+    # My listings requires authentication
+    resp = client.get("/my-listings")
+    assert resp.status_code == 302
+    assert "/auth/login" in resp.headers["Location"]
+
+    # Favorites requires authentication
+    resp = client.get("/favorites")
+    assert resp.status_code == 302
+    assert "/auth/login" in resp.headers["Location"]
+
+
+def test_stage2_authenticated_user_routes(app):
+    """Verifies that an authenticated user can access wizard, my listings, favorites, and upload sign."""
+    with app.test_client() as client:
+        @app.before_request
+        def mock_user():
+            from flask import g
+            g.user = {
+                "uid": "test_user_stage2",
+                "name": "Basharat Khan",
+                "email": "khanbasharat@gmail.com",
+                "role": "user",
+                "isBanned": False,
+            }
+
+        # Access Add Listing Wizard
+        resp = client.get("/listings/new")
+        assert resp.status_code == 200
+        assert b"Post Accommodation" in resp.data
+        assert b"wizard-form" in resp.data
+
+        # Access My Listings
+        resp = client.get("/my-listings")
+        assert resp.status_code == 200
+        assert b"My Listings" in resp.data
+        assert b"Pending Verification" in resp.data
+
+        # Access Favorites
+        resp = client.get("/favorites")
+        assert resp.status_code == 200
+        assert b"Saved Accommodations" in resp.data
+
+        # Access Profile Edit
+        resp = client.get("/profile/edit")
+        assert resp.status_code == 200
+        assert b"Edit Profile" in resp.data
+
+        # Access Notifications
+        resp = client.get("/profile/notifications")
+        assert resp.status_code == 200
+        assert b"Notifications" in resp.data
+
+        # Upload signing endpoint
+        resp = client.post("/api/uploads/sign", json={})
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert "signature" in data
+        assert "timestamp" in data
+        assert data["uploadPreset"] == "accommodation_signed"
+        assert data["folder"] == "listings/test_user_stage2"
+
 
 def test_user_role_route_guards(app):
     """Verifies route authorization according to role in g.user."""
     # 1. Normal user
     with app.test_client() as client:
-        with client.session_transaction() as sess:
-            pass  # Initialize session if needed
-
         @app.before_request
         def mock_user_auth():
             from flask import g

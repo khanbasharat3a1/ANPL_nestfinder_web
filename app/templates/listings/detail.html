@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ listing.title }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto; padding-bottom: 5rem;">
+  <!-- Back navigation & Actions row -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+    <a href="{{ url_for('listings.explore') }}" style="display: inline-flex; align-items: center; gap: 0.35rem; font-weight: 600;">
+      ← Back to Explore
+    </a>
+
+    <div style="display: flex; gap: 0.5rem;">
+      <!-- Share Button -->
+      <button type="button" id="btn-share" class="btn btn-secondary btn-sm" title="Share Listing">
+        <svg style="width: 16px; height: 16px; margin-right: 4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+        Share
+      </button>
+
+      <!-- Favorite Button -->
+      {% if current_user %}
+        <button type="button" id="btn-detail-favorite" class="btn btn-secondary btn-sm" data-favorited="{{ 'true' if is_favorite else 'false' }}">
+          <svg style="width: 16px; height: 16px; margin-right: 4px; fill: {{ 'var(--status-rejected)' if is_favorite else 'none' }}; color: {{ 'var(--status-rejected)' if is_favorite else 'currentColor' }}; stroke: currentColor; stroke-width: 2;" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          <span id="fav-label">{{ 'Saved' if is_favorite else 'Save' }}</span>
+        </button>
+      {% endif %}
+
+      <!-- Owner Edit button -->
+      {% if current_user and current_user.uid == listing.ownerId %}
+        <a href="{{ url_for('listings.edit', listing_id=listing.id) }}" class="btn btn-secondary btn-sm">
+          Edit
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Photo Gallery Carousel -->
+  <div class="card" style="padding: 0; overflow: hidden; margin-bottom: 2rem;">
+    <!-- Main Photo -->
+    <div style="position: relative; aspect-ratio: 16/9; background: #000; overflow: hidden;">
+      <img id="main-carousel-image" src="{{ detail_photos[0] if detail_photos else listing.coverPhoto }}" alt="{{ listing.title }}" style="width: 100%; height: 100%; object-fit: contain;">
+      
+      {% if listing.status == 'approved' %}
+        <span class="badge badge-approved" style="position: absolute; top: 12px; left: 12px; font-size: 0.8125rem;">
+          Verified Accommodation
+        </span>
+      {% else %}
+        <span class="badge badge-{{ listing.status }}" style="position: absolute; top: 12px; left: 12px; font-size: 0.8125rem;">
+          {{ listing.status|capitalize }}
+        </span>
+      {% endif %}
+    </div>
+
+    <!-- Thumbnails Strip -->
+    {% if detail_photos|length > 1 %}
+      <div style="display: flex; gap: 0.5rem; padding: 0.75rem; overflow-x: auto; background: var(--surface);">
+        {% for photo in detail_photos %}
+          <button type="button" class="carousel-thumb" data-url="{{ photo }}" style="border: 2px solid {{ 'var(--primary)' if loop.first else 'transparent' }}; border-radius: 6px; overflow: hidden; width: 72px; height: 52px; flex-shrink: 0; padding: 0; cursor: pointer; background: #000;">
+            <img src="{{ photo }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Thumbnail {{ loop.index }}">
+          </button>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Rejection Notice (Visible to Owner, Approver, Admin) -->
+  {% if listing.status == 'rejected' and listing.rejectionReason %}
+    <div style="background-color: var(--status-rejected-bg); border-left: 4px solid var(--status-rejected); padding: 1rem 1.25rem; border-radius: var(--radius-md); margin-bottom: 2rem;">
+      <div style="font-weight: 700; color: var(--status-rejected); margin-bottom: 0.25rem;">Listing Needs Revisions</div>
+      <div style="font-size: 0.9375rem; color: var(--text-primary);">Reason: {{ listing.rejectionReason }}</div>
+      {% if current_user and current_user.uid == listing.ownerId %}
+        <div style="margin-top: 0.75rem;">
+          <a href="{{ url_for('listings.edit', listing_id=listing.id) }}" class="btn btn-secondary btn-sm">Edit and Resubmit</a>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <!-- Core Listing Overview -->
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 700; margin-bottom: 0.5rem; line-height: 1.3;">
+        {{ listing.title }}
+      </h1>
+      <div style="display: flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 0.9375rem;">
+        <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>{{ listing.locality }}</span>
+        {% if listing.distanceFromOfficeKm %}
+          <span>• <strong>{{ listing.distanceFromOfficeKm }} km</strong> from Atomic North HQ</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Rent & Deposit Display -->
+    <div style="text-align: right;">
+      <div style="font-size: 2rem; font-weight: 800; color: var(--primary);">
+        {{ listing.rentPerMonth|format_inr }}<span style="font-size: 1rem; font-weight: 500; color: var(--text-secondary);">/mo</span>
+      </div>
+      <div style="font-size: 0.875rem; color: var(--text-muted);">
+        Security Deposit: {{ listing.securityDeposit|format_inr }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Reviewer Info Box (Approvers & Super Admins Only) -->
+  {% if can_view_reviewer and (listing.reviewedBy or listing.reviewedByName) %}
+    <div class="card" style="margin-bottom: 2rem; background: var(--bg); border: 1px dashed var(--border);">
+      <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.25rem;">
+        Review Verification Details (Reviewers & Admin View)
+      </div>
+      <div style="font-size: 0.875rem;">
+        Reviewed by <strong>{{ listing.reviewedByName or 'Authorized Reviewer' }}</strong>
+        {% if listing.reviewedByRole %} ({{ listing.reviewedByRole }}){% endif %}
+        {% if listing.reviewedAt %} on {{ listing.reviewedAt[:10] }}{% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Key Specs Grid -->
+  <div class="card" style="margin-bottom: 2rem;">
+    <h2 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">Property Details</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem;">
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Property Type</div>
+        <div style="font-weight: 600; text-transform: capitalize;">{{ listing.type }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Furnishing</div>
+        <div style="font-weight: 600; text-transform: capitalize;">{{ listing.furnishing }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Bedrooms / Bathrooms</div>
+        <div style="font-weight: 600;">{{ listing.bedrooms }} Bed / {{ listing.bathrooms }} Bath</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Tenant Preference</div>
+        <div style="font-weight: 600; text-transform: capitalize;">{{ listing.genderPreference }}</div>
+      </div>
+      <div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Available From</div>
+        <div style="font-weight: 600;">{{ listing.availableFrom[:10] if listing.availableFrom else 'Immediate' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div class="card" style="margin-bottom: 2rem;">
+    <h2 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.75rem;">Description</h2>
+    <p style="white-space: pre-line; line-height: 1.7; color: var(--text-secondary);">
+      {{ listing.description }}
+    </p>
+  </div>
+
+  <!-- Amenities -->
+  <div class="card" style="margin-bottom: 2rem;">
+    <h2 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem;">Amenities</h2>
+    {% if listing.amenities %}
+      <div style="display: flex; flex-wrap: wrap; gap: 0.625rem;">
+        {% for amenity in listing.amenities %}
+          <div style="display: inline-flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); padding: 0.5rem 0.875rem; border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500;">
+            <svg style="width: 16px; height: 16px; color: var(--primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>{{ amenity }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="color: var(--text-muted); font-size: 0.9375rem;">No specific amenities listed.</p>
+    {% endif %}
+  </div>
+
+  <!-- Address & Location -->
+  <div class="card" style="margin-bottom: 2rem;">
+    <h2 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.75rem;">Address in Billawar</h2>
+    <div style="color: var(--text-primary); font-size: 0.9375rem; line-height: 1.6;">
+      {{ listing.fullAddress }}
+    </div>
+  </div>
+
+  <!-- Community Report Link -->
+  {% if current_user and current_user.uid != listing.ownerId %}
+    <div style="text-align: right; margin-top: 1rem;">
+      {% if has_reported %}
+        <span style="font-size: 0.8125rem; color: var(--text-muted);">
+          ✓ You have reported this listing
+        </span>
+      {% else %}
+        <button type="button" id="btn-open-report" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.8125rem; text-decoration: underline;">
+          Report an issue with this accommodation
+        </button>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+<!-- Sticky Bottom Contact Bar -->
+<div style="position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); box-shadow: 0 -4px 12px rgba(0,0,0,0.08); z-index: 100; padding: 0.75rem 1rem;">
+  <div style="max-width: 900px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+    <div>
+      <div style="font-size: 0.8125rem; color: var(--text-muted);">Contact Host: {{ listing.ownerName }}</div>
+      <div style="font-size: 1.125rem; font-weight: 700; color: var(--primary);">
+        {{ listing.rentPerMonth|format_inr }}<span style="font-size: 0.75rem; font-weight: 400; color: var(--text-secondary);">/mo</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem;">
+      <!-- Call Button -->
+      <a href="tel:{{ listing.ownerPhone }}" class="btn btn-secondary" style="min-width: 120px;" title="Call Host">
+        <svg style="width: 18px; height: 18px; margin-right: 6px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+        Call
+      </a>
+
+      <!-- WhatsApp Button -->
+      {% set wa_num = listing.whatsappNumber or listing.ownerPhone %}
+      {% set wa_text = "Hi, I found your property \"" ~ listing.title ~ "\" in " ~ listing.locality ~ " on NestFinder. Is it currently available?" %}
+      <a href="https://wa.me/91{{ wa_num }}?text={{ wa_text|urlencode }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="min-width: 140px; background-color: #16A34A;" title="Chat on WhatsApp">
+        <svg style="width: 18px; height: 18px; margin-right: 6px; fill: currentColor;" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
+        WhatsApp
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Report Modal -->
+<div id="report-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; padding: 1rem;">
+  <div class="card" style="max-width: 460px; width: 100%;">
+    <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem;">Report Accommodation</h3>
+    <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">
+      Let the administrative team know if this listing is inaccurate, already taken, or violates company guidelines.
+    </p>
+
+    <div class="form-group">
+      <label for="report-reason" class="form-label">Reason for report</label>
+      <textarea id="report-reason" class="form-control" rows="4" placeholder="e.g. The property is already rented out, inaccurate rent amount..." required></textarea>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+      <button type="button" id="btn-cancel-report" class="btn btn-secondary">Cancel</button>
+      <button type="button" id="btn-submit-report" class="btn btn-danger">Submit Report</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // 1. Carousel Thumbnail Switching
+  const mainImg = document.getElementById('main-carousel-image');
+  document.querySelectorAll('.carousel-thumb').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.carousel-thumb').forEach(b => b.style.borderColor = 'transparent');
+      btn.style.borderColor = 'var(--primary)';
+      mainImg.src = btn.dataset.url;
+    });
+  });
+
+  // 2. Web Share API with Clipboard Fallback
+  document.getElementById('btn-share')?.addEventListener('click', async () => {
+    const shareData = {
+      title: "{{ listing.title }} — NestFinder",
+      text: "Verified accommodation in {{ listing.locality }}: {{ listing.rentPerMonth|format_inr }}/mo",
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (_) {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        window.NestFinder?.showToast('Listing link copied to clipboard!', 'success');
+      } catch (_) {
+        window.NestFinder?.showToast('Link: ' + window.location.href, 'info');
+      }
+    }
+  });
+
+  // 3. Detail Page Favorite Toggle
+  const favBtn = document.getElementById('btn-detail-favorite');
+  favBtn?.addEventListener('click', async () => {
+    const isFav = favBtn.dataset.favorited === 'true';
+    const target = !isFav;
+    const csrfToken = window.NestFinder?.getCsrfToken() || '';
+
+    try {
+      const res = await fetch(`/api/listings/{{ listing.id }}/favorite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({ isFavorite: target }),
+      });
+
+      if (res.ok) {
+        favBtn.dataset.favorited = target ? 'true' : 'false';
+        const svg = favBtn.querySelector('svg');
+        svg.style.fill = target ? 'var(--status-rejected)' : 'none';
+        svg.style.color = target ? 'var(--status-rejected)' : 'currentColor';
+        document.getElementById('fav-label').textContent = target ? 'Saved' : 'Save';
+        window.NestFinder?.showToast(target ? 'Added to favorites' : 'Removed from favorites', 'info');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  });
+
+  // 4. Report Modal Handler
+  const reportModal = document.getElementById('report-modal');
+  document.getElementById('btn-open-report')?.addEventListener('click', () => {
+    reportModal.style.display = 'flex';
+  });
+  document.getElementById('btn-cancel-report')?.addEventListener('click', () => {
+    reportModal.style.display = 'none';
+  });
+
+  document.getElementById('btn-submit-report')?.addEventListener('click', async () => {
+    const reason = document.getElementById('report-reason').value.trim();
+    if (reason.length < 5) {
+      window.NestFinder?.showToast('Please provide a reason with at least 5 characters.', 'error');
+      return;
+    }
+
+    const csrfToken = window.NestFinder?.getCsrfToken() || '';
+    try {
+      const res = await fetch(`/listings/{{ listing.id }}/report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+        body: JSON.stringify({ reason }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        reportModal.style.display = 'none';
+        window.NestFinder?.showToast('Report submitted for admin review.', 'success');
+        document.getElementById('btn-open-report').replaceWith('✓ You have reported this listing');
+      } else {
+        window.NestFinder?.showToast(data.error || 'Failed to submit report', 'error');
+      }
+    } catch (e) {
+      console.error(e);
+      window.NestFinder?.showToast('Network error while reporting', 'error');
+    }
+  });
+</script>
+{% endblock %}

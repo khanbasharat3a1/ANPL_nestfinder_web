@@ -70,13 +70,40 @@ def init_firebase(app=None) -> bool:
         return False
 
 
+def _has_valid_credentials() -> bool:
+    """Checks if explicit credentials, emulator, or GCP environment is available."""
+    if os.getenv("FIRESTORE_EMULATOR_HOST"):
+        return True
+    if os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON"):
+        return True
+    sa_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if sa_path and os.path.isfile(sa_path):
+        return True
+    if os.getenv("K_SERVICE") or os.getenv("GAE_SERVICE"):
+        return True
+    return False
+
+
 def get_firestore_client():
-    """Returns Firestore client instance."""
-    init_firebase()
-    return firestore.client()
+    """Returns Firestore client instance, or None if unconfigured in test/dev."""
+    if not _has_valid_credentials():
+        return None
+    try:
+        init_firebase()
+        return firestore.client()
+    except Exception as e:
+        logger.warning("Firestore client unavailable: %s", e)
+        return None
 
 
 def get_firebase_auth():
-    """Returns Firebase Auth module handle."""
-    init_firebase()
-    return auth
+    """Returns Firebase Auth module handle, or None if unconfigured."""
+    if not _has_valid_credentials():
+        return None
+    try:
+        init_firebase()
+        return auth
+    except Exception as e:
+        logger.warning("Firebase Auth unavailable: %s", e)
+        return None
+

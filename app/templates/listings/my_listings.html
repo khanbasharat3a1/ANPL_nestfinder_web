@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}My Listings — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto; padding-bottom: 3rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 700;">My Listings</h1>
+      <p style="color: var(--text-secondary); font-size: 0.9375rem;">Manage and track the verification status of your properties</p>
+    </div>
+
+    <a href="{{ url_for('listings.create') }}" class="btn btn-primary">
+      + Post New Listing
+    </a>
+  </div>
+
+  <!-- Tabs Navigation -->
+  <div style="display: flex; gap: 0.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem;">
+    <button type="button" class="tab-btn active" data-tab="pending" style="padding: 0.75rem 1rem; border: none; background: none; font-weight: 600; font-size: 0.9375rem; border-bottom: 2px solid var(--primary); color: var(--primary); cursor: pointer;">
+      Pending Verification ({{ pending_listings|length }})
+    </button>
+    <button type="button" class="tab-btn" data-tab="approved" style="padding: 0.75rem 1rem; border: none; background: none; font-weight: 600; font-size: 0.9375rem; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer;">
+      Live on Explore ({{ approved_listings|length }})
+    </button>
+    <button type="button" class="tab-btn" data-tab="rejected" style="padding: 0.75rem 1rem; border: none; background: none; font-weight: 600; font-size: 0.9375rem; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer;">
+      Needs Revisions ({{ rejected_listings|length }})
+    </button>
+  </div>
+
+  <!-- TAB 1: PENDING -->
+  <div class="tab-pane" id="tab-pending">
+    {% if pending_listings %}
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for item in pending_listings %}
+          <div class="card" style="display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: center;">
+            <img src="{{ item.coverPhoto }}" alt="{{ item.title }}" style="width: 120px; height: 90px; object-fit: cover; border-radius: var(--radius-md);" loading="lazy">
+            <div style="flex: 1; min-width: 220px;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span class="badge badge-pending">Under Review</span>
+                <span style="font-size: 0.8125rem; color: var(--text-muted);">{{ item.locality }}</span>
+              </div>
+              <h2 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.25rem;">
+                <a href="{{ url_for('listings.detail', listing_id=item.id) }}">{{ item.title }}</a>
+              </h2>
+              <div style="font-weight: 700; color: var(--primary);">
+                {{ item.rentPerMonth|format_inr }}/mo
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <a href="{{ url_for('listings.edit', listing_id=item.id) }}" class="btn btn-secondary btn-sm">Edit</a>
+              <form method="POST" action="{{ url_for('listings.archive', listing_id=item.id) }}" onsubmit="return confirm('Withdraw this listing?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline btn-sm">Withdraw</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card" style="text-align: center; padding: 3rem 1.5rem; color: var(--text-secondary);">
+        You have no pending listings under review.
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- TAB 2: APPROVED -->
+  <div class="tab-pane" id="tab-approved" style="display: none;">
+    {% if approved_listings %}
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for item in approved_listings %}
+          <div class="card" style="display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: center;">
+            <img src="{{ item.coverPhoto }}" alt="{{ item.title }}" style="width: 120px; height: 90px; object-fit: cover; border-radius: var(--radius-md);" loading="lazy">
+            <div style="flex: 1; min-width: 220px;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span class="badge badge-approved">Live & Verified</span>
+                <span style="font-size: 0.8125rem; color: var(--text-muted);">{{ item.locality }}</span>
+              </div>
+              <h2 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.25rem;">
+                <a href="{{ url_for('listings.detail', listing_id=item.id) }}">{{ item.title }}</a>
+              </h2>
+              <div style="font-weight: 700; color: var(--primary);">
+                {{ item.rentPerMonth|format_inr }}/mo
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <a href="{{ url_for('listings.detail', listing_id=item.id) }}" class="btn btn-secondary btn-sm">View</a>
+              <a href="{{ url_for('listings.edit', listing_id=item.id) }}" class="btn btn-secondary btn-sm" title="Editing will send back to review">Edit</a>
+              <form method="POST" action="{{ url_for('listings.archive', listing_id=item.id) }}" onsubmit="return confirm('Withdraw and unlist this property?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline btn-sm">Archive</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card" style="text-align: center; padding: 3rem 1.5rem; color: var(--text-secondary);">
+        You have no live approved listings right now.
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- TAB 3: REJECTED -->
+  <div class="tab-pane" id="tab-rejected" style="display: none;">
+    {% if rejected_listings %}
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for item in rejected_listings %}
+          <div class="card" style="border-left: 4px solid var(--status-rejected);">
+            <div style="display: flex; gap: 1.25rem; flex-wrap: wrap; align-items: flex-start; margin-bottom: 0.75rem;">
+              <img src="{{ item.coverPhoto }}" alt="{{ item.title }}" style="width: 120px; height: 90px; object-fit: cover; border-radius: var(--radius-md);" loading="lazy">
+              <div style="flex: 1; min-width: 220px;">
+                <span class="badge badge-rejected" style="margin-bottom: 0.25rem;">Needs Revisions</span>
+                <h2 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.25rem;">
+                  {{ item.title }}
+                </h2>
+                <div style="font-size: 0.875rem; color: var(--status-rejected); font-weight: 500;">
+                  Feedback: {{ item.rejectionReason or "Please update photos and verify property details." }}
+                </div>
+              </div>
+              <div>
+                <a href="{{ url_for('listings.edit', listing_id=item.id) }}" class="btn btn-primary btn-sm">
+                  Edit & Resubmit
+                </a>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card" style="text-align: center; padding: 3rem 1.5rem; color: var(--text-secondary);">
+        No listings need revisions.
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Simple Tab Switcher
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.style.borderColor = 'transparent';
+        b.style.color = 'var(--text-muted)';
+      });
+      document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+
+      btn.style.borderColor = 'var(--primary)';
+      btn.style.color = 'var(--primary)';
+      document.getElementById(`tab-${btn.dataset.tab}`).style.display = 'block';
+    });
+  });
+</script>
+{% endblock %}

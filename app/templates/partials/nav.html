@@ -6,30 +6,32 @@
 
   {% if current_user %}
     {% if current_user.role == 'user' %}
-      <a href="{{ url_for('listings.explore') }}#favorites" class="nav-link">
+      <a href="{{ url_for('listings.favorites') }}" class="nav-link {% if request.endpoint == 'listings.favorites' %}active{% endif %}">
         Favorites
       </a>
-      <a href="{{ url_for('listings.explore') }}#add" class="nav-link">
+      <a href="{{ url_for('listings.create') }}" class="nav-link {% if request.endpoint == 'listings.create' %}active{% endif %}">
         Add Listing
       </a>
-      <a href="{{ url_for('listings.explore') }}#my-listings" class="nav-link">
+      <a href="{{ url_for('listings.my_listings') }}" class="nav-link {% if request.endpoint == 'listings.my_listings' %}active{% endif %}">
         My Listings
       </a>
     {% elif current_user.role == 'approver' %}
-      <a href="{{ url_for('review.queue') }}" class="nav-link {% if request.endpoint.startswith('review.') %}active{% endif %}">
+      <a href="{{ url_for('review.queue') }}" class="nav-link {% if request.endpoint.startswith('review.') %}active{% endif %}" style="position:relative;">
         Review Queue
+        <span class="nav-badge" id="desktop-review-badge" style="display:none;position:static;margin-left:4px;">0</span>
       </a>
-      <a href="{{ url_for('listings.explore') }}#add" class="nav-link">
+      <a href="{{ url_for('listings.create') }}" class="nav-link {% if request.endpoint == 'listings.create' %}active{% endif %}">
         Add Listing
       </a>
-      <a href="{{ url_for('listings.explore') }}#my-listings" class="nav-link">
+      <a href="{{ url_for('listings.my_listings') }}" class="nav-link {% if request.endpoint == 'listings.my_listings' %}active{% endif %}">
         My Listings
       </a>
     {% elif current_user.role == 'super_admin' %}
-      <a href="{{ url_for('review.queue') }}" class="nav-link {% if request.endpoint.startswith('review.') %}active{% endif %}">
+      <a href="{{ url_for('review.queue') }}" class="nav-link {% if request.endpoint.startswith('review.') %}active{% endif %}" style="position:relative;">
         Review Queue
+        <span class="nav-badge" id="desktop-review-badge" style="display:none;position:static;margin-left:4px;">0</span>
       </a>
-      <a href="{{ url_for('listings.explore') }}#add" class="nav-link">
+      <a href="{{ url_for('listings.create') }}" class="nav-link {% if request.endpoint == 'listings.create' %}active{% endif %}">
         Add Listing
       </a>
       <a href="{{ url_for('admin.home') }}" class="nav-link {% if request.endpoint.startswith('admin.') %}active{% endif %}">
@@ -41,7 +43,7 @@
       Profile
     </a>
   {% else %}
-    <a href="{{ url_for('auth.login') }}" class="nav-link">
+    <a href="{{ url_for('listings.create') }}" class="nav-link">
       Add Listing
     </a>
   {% endif %}
@@ -58,19 +60,19 @@
   {% if current_user %}
     {% if current_user.role == 'user' %}
       {# User Tab 2: Favorites #}
-      <a href="{{ url_for('listings.explore') }}#favorites" class="mobile-nav-item" id="nav-favorites">
+      <a href="{{ url_for('listings.favorites') }}" class="mobile-nav-item {% if request.endpoint == 'listings.favorites' %}active{% endif %}" id="nav-favorites">
         <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
         <span>Favorites</span>
       </a>
 
       {# User Tab 3: Add #}
-      <a href="{{ url_for('listings.explore') }}#add" class="mobile-nav-item" id="nav-add">
+      <a href="{{ url_for('listings.create') }}" class="mobile-nav-item {% if request.endpoint == 'listings.create' %}active{% endif %}" id="nav-add">
         <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <span>Add</span>
       </a>
 
       {# User Tab 4: My Listings #}
-      <a href="{{ url_for('listings.explore') }}#my-listings" class="mobile-nav-item" id="nav-my-listings">
+      <a href="{{ url_for('listings.my_listings') }}" class="mobile-nav-item {% if request.endpoint == 'listings.my_listings' %}active{% endif %}" id="nav-my-listings">
         <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
         <span>My Listings</span>
       </a>
@@ -80,16 +82,17 @@
       <a href="{{ url_for('review.queue') }}" class="mobile-nav-item {% if request.endpoint.startswith('review.') %}active{% endif %}" id="nav-review">
         <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <span>Review</span>
+        <span class="nav-badge" id="mobile-review-badge" style="display:none;">0</span>
       </a>
 
       {# Approver Tab 3: Add #}
-      <a href="{{ url_for('listings.explore') }}#add" class="mobile-nav-item" id="nav-add">
+      <a href="{{ url_for('listings.create') }}" class="mobile-nav-item {% if request.endpoint == 'listings.create' %}active{% endif %}" id="nav-add">
         <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <span>Add</span>
       </a>
 
       {# Approver Tab 4: My Listings #}
-      <a href="{{ url_for('listings.explore') }}#my-listings" class="mobile-nav-item" id="nav-my-listings">
+      <a href="{{ url_for('listings.my_listings') }}" class="mobile-nav-item {% if request.endpoint == 'listings.my_listings' %}active{% endif %}" id="nav-my-listings">
         <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
         <span>My Listings</span>
       </a>
@@ -99,10 +102,11 @@
       <a href="{{ url_for('review.queue') }}" class="mobile-nav-item {% if request.endpoint.startswith('review.') %}active{% endif %}" id="nav-review">
         <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <span>Review</span>
+        <span class="nav-badge" id="mobile-review-badge" style="display:none;">0</span>
       </a>
 
       {# Super Admin Tab 3: Add #}
-      <a href="{{ url_for('listings.explore') }}#add" class="mobile-nav-item" id="nav-add">
+      <a href="{{ url_for('listings.create') }}" class="mobile-nav-item {% if request.endpoint == 'listings.create' %}active{% endif %}" id="nav-add">
         <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         <span>Add</span>
       </a>
@@ -122,7 +126,7 @@
 
   {% else %}
     {# Guest Tabs #}
-    <a href="{{ url_for('auth.login') }}" class="mobile-nav-item" id="nav-guest-add">
+    <a href="{{ url_for('listings.create') }}" class="mobile-nav-item" id="nav-guest-add">
       <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
       <span>Add</span>
     </a>

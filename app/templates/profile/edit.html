@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Profile — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 520px; margin: 0 auto; padding-bottom: 3rem;">
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{{ url_for('profile.index') }}" style="font-weight: 600; font-size: 0.875rem;">← Back to Profile</a>
+    <h1 style="font-size: 1.75rem; font-weight: 700; margin-top: 0.5rem;">Edit Profile</h1>
+  </div>
+
+  <div class="card">
+    <form method="POST" action="{{ url_for('profile.edit') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label for="p-name" class="form-label">Full Name *</label>
+        <input type="text" id="p-name" name="name" class="form-control" value="{{ user.name }}" minlength="1" maxlength="100" required>
+      </div>
+
+      <div class="form-group">
+        <label for="p-phone" class="form-label">Mobile Phone Number</label>
+        <input type="tel" id="p-phone" name="phone" class="form-control" value="{{ user.phone or '' }}" placeholder="9876543210" pattern="[6-9][0-9]{9}">
+        <div class="form-helper">10-digit Indian phone number starting with 6, 7, 8, or 9 (without +91).</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Registered Email</label>
+        <input type="text" class="form-control" value="{{ user.email }}" disabled style="opacity: 0.7;">
+        <div class="form-helper">Email is linked to your Firebase account and cannot be modified here.</div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top: 1.5rem;">
+        Save Profile
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

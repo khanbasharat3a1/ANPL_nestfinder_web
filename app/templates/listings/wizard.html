@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  {{ 'Edit Listing' if is_edit_mode else 'Post New Accommodation' }} — {{ app_name }}
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 720px; margin: 0 auto; padding-bottom: 4rem;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.25rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 700;">
+        {{ 'Edit Accommodation' if is_edit_mode else 'Post Accommodation' }}
+      </h1>
+      <p style="color: var(--text-secondary); font-size: 0.875rem;">
+        {{ 'Update details and submit for verification' if is_edit_mode else 'List a room, flat, or PG in Billawar for Atomic North colleagues' }}
+      </p>
+    </div>
+
+    {% if not is_edit_mode %}
+      <button type="button" id="clear-draft-btn" style="background:none;border:none;color:var(--text-muted);font-size:0.8125rem;cursor:pointer;text-decoration:underline;">
+        Clear draft
+      </button>
+    {% endif %}
+  </div>
+
+  <!-- Wizard Step Indicator & Progress Bar -->
+  <div style="margin-bottom: 1.75rem;">
+    <div style="display: flex; justify-content: space-between; font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.5rem;">
+      <span id="wizard-step-indicator">Step 1 of 5</span>
+      <span style="color: var(--text-muted);">Auto-saved to browser</span>
+    </div>
+    <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
+      <div id="wizard-progress-bar" style="width: 20%; height: 100%; background: var(--primary); transition: width 0.3s ease;"></div>
+    </div>
+  </div>
+
+  <!-- Form Wizard Container -->
+  <form id="wizard-form" novalidate>
+    <!-- STEP 1: Basic Information -->
+    <div class="wizard-step card" data-step="1">
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem;">1. Basic Details</h2>
+
+      <div class="form-group">
+        <label for="f-title" class="form-label">Listing Title *</label>
+        <input type="text" id="f-title" name="title" class="form-control" placeholder="e.g. Spacious 2BHK Flat near Billawar Main Bazar" minlength="5" maxlength="100" required>
+        <div class="form-helper">Clear headline describing the accommodation (5–100 characters).</div>
+      </div>
+
+      <div class="form-group">
+        <label for="f-type" class="form-label">Property Type *</label>
+        <select id="f-type" name="type" class="form-control" required>
+          {% for ptype, label in app_config.propertyTypeLabels.items() %}
+            <option value="{{ ptype }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label for="f-rent" class="form-label">Rent per month (₹) *</label>
+          <input type="number" id="f-rent" name="rentPerMonth" class="form-control" placeholder="5000" min="1" step="100" required>
+        </div>
+
+        <div class="form-group">
+          <label for="f-deposit" class="form-label">Security Deposit (₹) *</label>
+          <input type="number" id="f-deposit" name="securityDeposit" class="form-control" placeholder="5000" min="0" step="100" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="f-available" class="form-label">Available From *</label>
+        <input type="date" id="f-available" name="availableFrom" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label for="f-description" class="form-label">Full Description *</label>
+        <textarea id="f-description" name="description" class="form-control" rows="4" placeholder="Describe the space, walking distance, power backup, water supply, landlord terms..." minlength="10" maxlength="2000" required></textarea>
+        <div class="form-helper">Detailed description (10–2000 characters).</div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Specifications -->
+    <div class="wizard-step card" data-step="2" style="display: none;">
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem;">2. Property Specifications</h2>
+
+      <div class="form-group">
+        <label for="f-furnishing" class="form-label">Furnishing Status *</label>
+        <select id="f-furnishing" name="furnishing" class="form-control" required>
+          <option value="furnished">Fully Furnished</option>
+          <option value="semi" selected>Semi Furnished</option>
+          <option value="unfurnished">Unfurnished</option>
+        </select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label for="f-bedrooms" class="form-label">Bedrooms *</label>
+          <input type="number" id="f-bedrooms" name="bedrooms" class="form-control" value="1" min="0" max="20" required>
+          <div class="form-helper">0 for 1RK or shared hall.</div>
+        </div>
+
+        <div class="form-group">
+          <label for="f-bathrooms" class="form-label">Bathrooms *</label>
+          <input type="number" id="f-bathrooms" name="bathrooms" class="form-control" value="1" min="1" max="10" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="f-gender" class="form-label">Tenant Gender Preference *</label>
+        <select id="f-gender" name="genderPreference" class="form-control" required>
+          <option value="any" selected>Anyone (Male / Female / Family)</option>
+          <option value="male">Male Only</option>
+          <option value="female">Female Only</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- STEP 3: Location -->
+    <div class="wizard-step card" data-step="3" style="display: none;">
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem;">3. Location & Address</h2>
+
+      <div class="form-group">
+        <label for="locality-select" class="form-label">Locality in Billawar *</label>
+        <select id="locality-select" name="locality" class="form-control" required>
+          {% for loc in app_config.localities %}
+            <option value="{{ loc }}">{{ loc }}</option>
+          {% endfor %}
+          <option value="__custom__">+ Other (Enter Custom Locality)</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="custom-locality-group" style="display: none;">
+        <label for="custom-locality-input" class="form-label">Specify Custom Locality *</label>
+        <input type="text" id="custom-locality-input" name="customLocality" class="form-control" placeholder="e.g. Bhaddu Road" maxlength="60">
+        <div class="form-helper">Maximum 60 characters.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="f-address" class="form-label">Full Address / Landmark *</label>
+        <textarea id="f-address" name="fullAddress" class="form-control" rows="3" placeholder="e.g. House No. 42, Near Shiva Temple, Ward 3, Billawar" minlength="5" maxlength="250" required></textarea>
+        <div class="form-helper">Physical street address or nearby landmark.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="f-dist" class="form-label">Distance from Atomic North Campus HQ (km)</label>
+        <input type="number" id="f-dist" name="distanceFromOfficeKm" class="form-control" placeholder="2.5" min="0" step="0.1">
+        <div class="form-helper">Approximate road distance from HQ campus in Billawar.</div>
+      </div>
+    </div>
+
+    <!-- STEP 4: Amenities -->
+    <div class="wizard-step card" data-step="4" style="display: none;">
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem;">4. Amenities</h2>
+      <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.25rem;">
+        Select all features available for this property:
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.875rem;">
+        {% for amenity in app_config.amenities %}
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 0.9375rem; cursor: pointer; user-select: none;">
+            <input type="checkbox" name="amenities" value="{{ amenity }}" style="width: 18px; height: 18px; accent-color: var(--primary);">
+            <span>{{ amenity }}</span>
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- STEP 5: Photos & Contact -->
+    <div class="wizard-step card" data-step="5" style="display: none;">
+      <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.25rem;">5. Photos & Contact Info</h2>
+
+      <!-- Cloudinary Photos Upload Block -->
+      <div style="margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
+          <label class="form-label" style="margin-bottom: 0;">Property Photos (2 to 8 required) *</label>
+          <span id="photo-count-indicator" style="font-size: 0.8125rem; color: var(--text-muted);">0/8 photos added</span>
+        </div>
+
+        <div style="border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 1.5rem; text-align: center; background: var(--bg); margin-bottom: 1rem;">
+          <input type="file" id="photo-file-input" accept="image/*" multiple style="display: none;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('photo-file-input').click()">
+            <svg style="width: 18px; height: 18px; margin-right: 6px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            Choose Images to Upload
+          </button>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+            Images are compressed automatically in your browser before upload.
+          </div>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div id="upload-progress-container" style="display: none; margin-bottom: 1rem;">
+          <div style="font-size: 0.75rem; color: var(--primary); font-weight: 600; margin-bottom: 4px;">Uploading to Cloudinary...</div>
+          <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
+            <div id="upload-progress-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.2s ease;"></div>
+          </div>
+        </div>
+
+        <!-- Photos Preview Grid -->
+        <div id="photos-preview-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.75rem;"></div>
+      </div>
+
+      <!-- Contact Details -->
+      <div style="border-top: 1px solid var(--border); padding-top: 1.5rem;">
+        <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 1rem;">Host Contact Details</h3>
+
+        <div class="form-group">
+          <label for="f-ownername" class="form-label">Host Name *</label>
+          <input type="text" id="f-ownername" name="ownerName" class="form-control" value="{{ current_user.name if current_user else '' }}" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div class="form-group">
+            <label for="f-ownerphone" class="form-label">Phone Number *</label>
+            <input type="tel" id="f-ownerphone" name="ownerPhone" class="form-control" placeholder="9876543210" value="{{ current_user.phone or '' }}" pattern="[6-9][0-9]{9}" required>
+            <div class="form-helper">10 digits without +91</div>
+          </div>
+
+          <div class="form-group">
+            <label for="f-whatsapp" class="form-label">WhatsApp Number (Optional)</label>
+            <input type="tel" id="f-whatsapp" name="whatsappNumber" class="form-control" placeholder="9876543210" pattern="[6-9][0-9]{9}">
+            <div class="form-helper">Defaults to primary phone if empty</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wizard Navigation Buttons -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
+      <button type="button" id="wizard-prev-btn" class="btn btn-secondary" style="visibility: hidden;">
+        ← Back
+      </button>
+
+      <div>
+        <button type="button" id="wizard-next-btn" class="btn btn-primary">
+          Continue →
+        </button>
+        <button type="submit" id="wizard-submit-btn" class="btn btn-primary" style="display: none; background: #16A34A;">
+          {{ 'Save Changes' if is_edit_mode else 'Submit Listing for Verification' }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.WIZARD_CONFIG = {
+    isEditMode: {{ 'true' if is_edit_mode else 'false' }},
+    listingId: "{{ listing.id if listing else '' }}",
+  };
+  {% if is_edit_mode and listing %}
+    window.INITIAL_LISTING_DATA = {{ listing | tojson }};
+  {% endif %}
+</script>
+<script type="module" src="{{ url_for('static', filename='js/wizard.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications — {{ app_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 720px; margin: 0 auto; padding-bottom: 3rem;">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.5rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 700;">Notifications</h1>
+      <p style="color: var(--text-secondary); font-size: 0.9375rem;">Updates regarding listing approvals, rejections, and alerts</p>
+    </div>
+
+    {% if notifications %}
+      <button type="button" id="btn-read-all" class="btn btn-secondary btn-sm">
+        Mark all as read
+      </button>
+    {% endif %}
+  </div>
+
+  {% if notifications %}
+    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+      {% for notif in notifications %}
+        <div class="card notif-card" data-id="{{ notif.id }}" style="padding: 1rem 1.25rem; {{ 'border-left: 4px solid var(--primary); background: var(--surface-raised);' if not notif.read else 'opacity: 0.85;' }}">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.25rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span class="badge {{ 'badge-approved' if notif.type == 'approved' else 'badge-rejected' }}">
+                {{ notif.type|capitalize }}
+              </span>
+              <strong style="font-size: 0.9375rem;">{{ notif.listingTitle }}</strong>
+            </div>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">{{ notif.createdAt[:10] if notif.createdAt else '' }}</span>
+          </div>
+
+          <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem; line-height: 1.5;">
+            {{ notif.message }}
+          </p>
+
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            {% if notif.listingId %}
+              <a href="{{ url_for('listings.detail', listing_id=notif.listingId) }}" style="font-size: 0.8125rem; font-weight: 600;">
+                View Accommodation →
+              </a>
+            {% endif %}
+
+            {% if not notif.read %}
+              <button type="button" class="btn-mark-read" data-id="{{ notif.id }}" style="background: none; border: none; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; text-decoration: underline;">
+                Mark read
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 4rem 1.5rem;">
+      <div style="width: 64px; height: 64px; margin: 0 auto 1rem; background-color: var(--primary-light); color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <svg style="width: 32px; height: 32px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      </div>
+      <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">No notifications yet</h2>
+      <p style="color: var(--text-secondary); max-width: 420px; margin: 0 auto; font-size: 0.9375rem;">
+        You'll receive notifications here when your listings are reviewed or when updates occur.
+      </p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const csrfToken = window.NestFinder?.getCsrfToken() || '';
+
+  // Mark single as read
+  document.querySelectorAll('.btn-mark-read').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const res = await fetch(`/api/notifications/${id}/read`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken },
+      });
+      if (res.ok) {
+        btn.closest('.notif-card').style.opacity = '0.85';
+        btn.closest('.notif-card').style.borderLeft = 'none';
+        btn.remove();
+      }
+    });
+  });
+
+  // Mark all as read
+  document.getElementById('btn-read-all')?.addEventListener('click', async () => {
+    const res = await fetch('/api/notifications/read-all', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': csrfToken },
+    });
+    if (res.ok) {
+      window.location.reload();
+    }
+  });
+</script>
+{% endblock %}
